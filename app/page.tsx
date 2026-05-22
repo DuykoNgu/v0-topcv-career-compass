@@ -45,6 +45,12 @@ export interface UserProfile {
   experience: string
   goals: string
   previousJobSurvey?: PreviousJobSurvey
+  fullName?: string
+  targetTitle?: string
+  email?: string
+  phone?: string
+  location?: string
+  website?: string
 }
 
 export interface Job {
@@ -76,6 +82,12 @@ export default function HomePage() {
     interests: [],
     experience: "",
     goals: "",
+    fullName: "Nguyễn Minh Đức",
+    targetTitle: "",
+    email: "minhduc.dev@gmail.com",
+    phone: "0901 234 567",
+    location: "Quận 1, TP. Hồ Chí Minh",
+    website: "linkedin.com/in/minhduc",
   })
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
 
@@ -112,13 +124,20 @@ export default function HomePage() {
     : null
 
   const showHeader = currentScreen !== "welcome"
+  const isProfileReady = 
+    currentScreen !== "welcome" && 
+    currentScreen !== "career-stage" && 
+    currentScreen !== "onboarding"
 
   return (
     <div className="min-h-screen bg-background">
       {showHeader && (
         <Header 
-          showNav={currentScreen === "job-match" || currentScreen === "job-detail"} 
+          showNav={isProfileReady} 
+          isLoggedIn={isProfileReady}
           onLogoClick={() => handleNavigate("welcome")}
+          onProfileClick={() => handleNavigate("profile-builder")}
+          onJobsClick={() => handleNavigate("job-match")}
         />
       )}
       
@@ -158,8 +177,19 @@ export default function HomePage() {
             <ProfileBuilderScreen 
               key="profile-builder"
               userProfile={userProfile}
-              onComplete={() => handleNavigate("job-match")}
-              onBack={() => handleNavigate("compass-result")}
+              onComplete={(updatedData) => {
+                if (updatedData) {
+                  handleUserProfileUpdate(updatedData)
+                }
+                handleNavigate("job-match")
+              }}
+              onBack={() => {
+                if (userProfile.skills && userProfile.skills.length > 0) {
+                  handleNavigate("job-match")
+                } else {
+                  handleNavigate("compass-result")
+                }
+              }}
             />
           )}
           {currentScreen === "job-match" && (
