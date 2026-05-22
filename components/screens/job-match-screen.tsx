@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, MapPin, Briefcase, BadgeCheck, Users, DollarSign, Sparkles } from "lucide-react"
+import { MapPin, Briefcase, BadgeCheck, Users, DollarSign, Sparkles, Filter, Search } from "lucide-react"
 import type { UserProfile, Job } from "@/app/page"
 
 interface JobMatchScreenProps {
@@ -72,44 +72,85 @@ const sampleJobs: Job[] = [
     requirements: ["Hiểu biết về fintech", "Kỹ năng phân tích", "Tiếng Anh tốt"],
     benefits: ["Lương tháng 13-14", "Bảo hiểm cao cấp", "Gym miễn phí"],
   },
+  {
+    id: "5",
+    title: "Digital Marketing Manager",
+    company: "E-Commerce Plus",
+    logo: "EP",
+    salary: "25-35 triệu",
+    workMode: "Hybrid",
+    hasMentor: false,
+    isVerified: true,
+    matchScore: 78,
+    location: "TP.HCM",
+    description: "Quản lý chiến lược digital marketing tổng thể, dẫn dắt team marketing 5-7 người.",
+    requirements: ["5+ năm kinh nghiệm", "Quản lý team", "E-commerce experience"],
+    benefits: ["Bonus theo doanh số", "Laptop + phone", "Parking free"],
+  },
+  {
+    id: "6",
+    title: "Data Analyst",
+    company: "DataTech VN",
+    logo: "DT",
+    salary: "18-25 triệu",
+    workMode: "Remote",
+    hasMentor: true,
+    isVerified: true,
+    matchScore: 75,
+    location: "Remote",
+    description: "Phân tích dữ liệu kinh doanh, tạo báo cáo và dashboard cho các bộ phận.",
+    requirements: ["SQL, Python/R", "Data visualization", "Critical thinking"],
+    benefits: ["Remote toàn thời gian", "Flexible hours", "Learning budget"],
+  },
 ]
 
-export default function JobMatchScreen({ onJobSelect, onBack }: JobMatchScreenProps) {
+export default function JobMatchScreen({ onJobSelect }: JobMatchScreenProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="min-h-screen flex flex-col bg-background"
+      className="min-h-[calc(100vh-4rem)]"
     >
-      {/* Header */}
-      <div className="px-4 py-4 flex items-center gap-3 border-b border-border sticky top-0 bg-background z-10">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          className="rounded-full"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="font-semibold text-foreground">Việc làm phù hợp</h1>
-          <p className="text-xs text-muted-foreground">{sampleJobs.length} công việc dành cho bạn</p>
+      {/* Sub Header with Search */}
+      <div className="border-b border-border bg-card sticky top-16 z-10">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-foreground">Việc làm phù hợp với bạn</h1>
+              <p className="text-muted-foreground">{sampleJobs.length} công việc được AI gợi ý</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 lg:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm việc làm..."
+                  className="w-full h-11 pl-10 pr-4 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl">
+                <Filter className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Job List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {sampleJobs.map((job, index) => (
-          <motion.div
-            key={job.id}
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <JobCard job={job} onClick={() => onJobSelect(job)} />
-          </motion.div>
-        ))}
+      {/* Job Grid */}
+      <div className="container mx-auto px-6 py-8">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {sampleJobs.map((job, index) => (
+            <motion.div
+              key={job.id}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <JobCard job={job} onClick={() => onJobSelect(job)} />
+            </motion.div>
+          ))}
+        </div>
       </div>
     </motion.div>
   )
@@ -130,46 +171,45 @@ function JobCard({ job, onClick }: JobCardProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full p-4 bg-card rounded-xl border border-border text-left hover:border-primary transition-colors"
+      className="w-full p-6 bg-card rounded-2xl border border-border text-left hover:border-primary hover:shadow-lg transition-all duration-200 h-full flex flex-col"
     >
       {/* Header */}
-      <div className="flex items-start gap-3 mb-3">
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+      <div className="flex items-start gap-4 mb-4">
+        <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
           {job.logo}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-foreground truncate">{job.title}</h3>
+            <h3 className="font-bold text-foreground truncate">{job.title}</h3>
             {job.isVerified && (
-              <BadgeCheck className="w-4 h-4 text-accent flex-shrink-0" />
+              <BadgeCheck className="w-5 h-5 text-accent flex-shrink-0" />
             )}
           </div>
-          <p className="text-sm text-muted-foreground">{job.company}</p>
+          <p className="text-muted-foreground">{job.company}</p>
         </div>
-        <div className={`px-2.5 py-1 rounded-full text-xs font-bold ${getScoreColor(job.matchScore)}`}>
-          {job.matchScore}%
-        </div>
+      </div>
+
+      {/* Match Score */}
+      <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold mb-4 w-fit ${getScoreColor(job.matchScore)}`}>
+        <Sparkles className="w-4 h-4" />
+        {job.matchScore}% phù hợp
       </div>
 
       {/* Tags */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        <Tag icon={<DollarSign className="w-3 h-3" />} label={job.salary} />
-        <Tag icon={<MapPin className="w-3 h-3" />} label={job.location} />
-        <Tag icon={<Briefcase className="w-3 h-3" />} label={job.workMode} />
+      <div className="flex flex-wrap gap-2 mb-4 flex-1">
+        <Tag icon={<DollarSign className="w-3.5 h-3.5" />} label={job.salary} />
+        <Tag icon={<MapPin className="w-3.5 h-3.5" />} label={job.location} />
+        <Tag icon={<Briefcase className="w-3.5 h-3.5" />} label={job.workMode} />
       </div>
 
       {/* Footer */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 pt-4 border-t border-border">
         {job.hasMentor && (
-          <div className="flex items-center gap-1 text-xs text-accent">
-            <Users className="w-3 h-3" />
+          <div className="flex items-center gap-1.5 text-sm text-accent">
+            <Users className="w-4 h-4" />
             <span>Có mentor</span>
           </div>
         )}
-        <div className="flex items-center gap-1 text-xs text-primary">
-          <Sparkles className="w-3 h-3" />
-          <span>Phù hợp với bạn</span>
-        </div>
       </div>
     </button>
   )
@@ -177,7 +217,7 @@ function JobCard({ job, onClick }: JobCardProps) {
 
 function Tag({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded-md text-xs text-muted-foreground">
+    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg text-sm text-muted-foreground">
       {icon}
       {label}
     </span>

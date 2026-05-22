@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { AnimatePresence } from "framer-motion"
+import Header from "@/components/layout/header"
 import WelcomeScreen from "@/components/screens/welcome-screen"
 import CareerStageScreen from "@/components/screens/career-stage-screen"
 import OnboardingScreen from "@/components/screens/onboarding-screen"
@@ -81,9 +82,18 @@ export default function HomePage() {
     handleNavigate("job-detail")
   }
 
+  const showHeader = currentScreen !== "welcome"
+
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-md min-h-screen">
+    <div className="min-h-screen bg-background">
+      {showHeader && (
+        <Header 
+          showNav={currentScreen === "job-match" || currentScreen === "job-detail"} 
+          onLogoClick={() => handleNavigate("welcome")}
+        />
+      )}
+      
+      <main>
         <AnimatePresence mode="wait">
           {currentScreen === "welcome" && (
             <WelcomeScreen 
@@ -164,7 +174,7 @@ export default function HomePage() {
             />
           )}
         </AnimatePresence>
-      </div>
-    </main>
+      </main>
+    </div>
   )
 }
