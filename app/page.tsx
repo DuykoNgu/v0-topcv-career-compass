@@ -8,11 +8,12 @@ import CareerStageScreen from "@/components/screens/career-stage-screen"
 import OnboardingScreen from "@/components/screens/onboarding-screen"
 import CareerCompassResult from "@/components/screens/career-compass-result"
 import ProfileBuilderScreen from "@/components/screens/profile-builder-screen"
-import JobMatchScreen from "@/components/screens/job-match-screen"
+import JobMatchScreen, { sampleJobs } from "@/components/screens/job-match-screen"
 import JobDetailScreen from "@/components/screens/job-detail-screen"
 import FitExplanationScreen from "@/components/screens/fit-explanation-screen"
 import ApplyScreen from "@/components/screens/apply-screen"
 import ReferralScreen from "@/components/screens/referral-screen"
+import { calculateJobMatchScore } from "@/lib/match"
 
 export type Screen = 
   | "welcome"
@@ -28,12 +29,22 @@ export type Screen =
 
 export type CareerStage = "student" | "office" | null
 
+export interface PreviousJobSurvey {
+  title: string
+  salary: number
+  workMode: string
+  hasMentor: boolean
+  dislikedFactors: string[]
+  expectedImprovements: string[]
+}
+
 export interface UserProfile {
   careerStage: CareerStage
   skills: string[]
   interests: string[]
   experience: string
   goals: string
+  previousJobSurvey?: PreviousJobSurvey
 }
 
 export interface Job {
@@ -50,6 +61,11 @@ export interface Job {
   description: string
   requirements: string[]
   benefits: string[]
+  experience?: string
+  jobType?: string
+  field?: string
+  salaryMin?: number
+  salaryMax?: number
 }
 
 export default function HomePage() {
@@ -81,6 +97,19 @@ export default function HomePage() {
     setSelectedJob(job)
     handleNavigate("job-detail")
   }
+
+  const handleUserProfileUpdate = (updatedProfile: Partial<UserProfile>) => {
+    setUserProfile(prev => ({ ...prev, ...updatedProfile }))
+  }
+
+  const processedJobs = sampleJobs.map(job => ({
+    ...job,
+    matchScore: calculateJobMatchScore(job, userProfile)
+  }))
+
+  const processedSelectedJob = selectedJob 
+    ? processedJobs.find(j => j.id === selectedJob.id) || selectedJob 
+    : null
 
   const showHeader = currentScreen !== "welcome"
 
@@ -121,6 +150,7 @@ export default function HomePage() {
               key="compass-result"
               userProfile={userProfile}
               onCreateProfile={() => handleNavigate("profile-builder")}
+              onViewJobs={() => handleNavigate("job-match")}
               onBack={() => handleNavigate("onboarding")}
             />
           )}
@@ -136,33 +166,35 @@ export default function HomePage() {
             <JobMatchScreen 
               key="job-match"
               userProfile={userProfile}
+              jobs={processedJobs}
               onJobSelect={handleJobSelect}
               onBack={() => handleNavigate("profile-builder")}
             />
           )}
-          {currentScreen === "job-detail" && selectedJob && (
+          {currentScreen === "job-detail" && processedSelectedJob && (
             <JobDetailScreen 
               key="job-detail"
-              job={selectedJob}
+              job={processedSelectedJob}
               userProfile={userProfile}
               onApply={() => handleNavigate("apply")}
               onViewFit={() => handleNavigate("fit-explanation")}
               onBack={() => handleNavigate("job-match")}
             />
           )}
-          {currentScreen === "fit-explanation" && selectedJob && (
+          {currentScreen === "fit-explanation" && processedSelectedJob && (
             <FitExplanationScreen 
               key="fit-explanation"
-              job={selectedJob}
+              job={processedSelectedJob}
               userProfile={userProfile}
+              onUserProfileUpdate={handleUserProfileUpdate}
               onBack={() => handleNavigate("job-detail")}
               onApply={() => handleNavigate("apply")}
             />
           )}
-          {currentScreen === "apply" && selectedJob && (
+          {currentScreen === "apply" && processedSelectedJob && (
             <ApplyScreen 
               key="apply"
-              job={selectedJob}
+              job={processedSelectedJob}
               onSuccess={() => handleNavigate("referral")}
               onBack={() => handleNavigate("job-detail")}
             />

@@ -3,12 +3,14 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Compass, Sparkles, Target, ArrowRight, Users, TrendingUp, CheckCircle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 interface WelcomeScreenProps {
   onStart: () => void
 }
 
 export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
+  const { toast } = useToast()
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -56,12 +58,13 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               size="lg"
               className="h-14 px-8 text-lg font-semibold rounded-xl"
             >
-              Bắt đầu miễn phí
+              Đăng nhập / Đăng ký
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <Button
               variant="outline"
               size="lg"
+              onClick={() => toast({ title: "Thông tin dự án", description: "TopCV Career Compass là nền tảng AI giúp sinh viên và nhân viên văn phòng định hướng sự nghiệp phù hợp dựa trên phân tích kỹ năng." })}
               className="h-14 px-8 text-lg font-semibold rounded-xl"
             >
               Tìm hiểu thêm

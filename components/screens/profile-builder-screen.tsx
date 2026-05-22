@@ -8,7 +8,7 @@ import type { UserProfile } from "@/app/page"
 
 interface ProfileBuilderScreenProps {
   userProfile: UserProfile
-  onComplete: () => void
+  onComplete: (updatedProfile?: Partial<UserProfile>) => void
   onBack: () => void
 }
 
@@ -27,15 +27,33 @@ const generatedProfile = {
   ],
 }
 
-export default function ProfileBuilderScreen({ onComplete, onBack }: ProfileBuilderScreenProps) {
+export default function ProfileBuilderScreen({ userProfile, onComplete, onBack }: ProfileBuilderScreenProps) {
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [editingSection, setEditingSection] = useState<string | null>(null)
-  const [profile, setProfile] = useState(generatedProfile)
+  const [profile, setProfile] = useState(() => {
+    let summary = generatedProfile.summary
+    if (userProfile.experience || userProfile.goals) {
+      summary = `Ứng viên có mục tiêu nghề nghiệp: ${userProfile.goals || "Phát triển bản thân"}. Kinh nghiệm làm việc: ${userProfile.experience || "Mới tốt nghiệp / chưa có nhiều kinh nghiệm"}.`
+    }
+    return {
+      summary,
+      skills: userProfile.skills && userProfile.skills.length > 0 ? userProfile.skills : generatedProfile.skills,
+      projects: generatedProfile.projects,
+      achievements: generatedProfile.achievements,
+    }
+  })
 
   const handleRegenerate = async () => {
     setIsRegenerating(true)
     await new Promise(resolve => setTimeout(resolve, 1000))
     setIsRegenerating(false)
+  }
+
+  const handleComplete = () => {
+    onComplete({
+      skills: profile.skills,
+      experience: profile.summary,
+    })
   }
 
   return (
@@ -66,7 +84,7 @@ export default function ProfileBuilderScreen({ onComplete, onBack }: ProfileBuil
                 <p className="text-sm text-muted-foreground">AI tạo hồ sơ từ thông tin của bạn</p>
               </div>
             </div>
-            <Button onClick={onComplete} className="hidden sm:flex">
+            <Button onClick={handleComplete} className="hidden sm:flex">
               Lưu và tiếp tục
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -105,16 +123,34 @@ export default function ProfileBuilderScreen({ onComplete, onBack }: ProfileBuil
               isRegenerating={isRegenerating}
               isEditing={editingSection === "skills"}
             >
-              <div className="flex flex-wrap gap-2">
-                {profile.skills.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
+              {editingSection === "skills" ? (
+                <div className="space-y-2 w-full">
+                  <textarea
+                    value={profile.skills.join(", ")}
+                    onChange={(e) => {
+                      const newSkills = e.target.value
+                        .split(",")
+                        .map(s => s.trim())
+                        .filter(Boolean)
+                      setProfile(prev => ({ ...prev, skills: newSkills }))
+                    }}
+                    placeholder="Nhập các kỹ năng, phân tách bằng dấu phẩy..."
+                    className="w-full h-32 p-4 bg-background border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                  />
+                  <p className="text-xs text-muted-foreground">Phân tách các kỹ năng bằng dấu phẩy (ví dụ: React, Node.js, SQL)</p>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {profile.skills.map((skill, index) => (
+                    <span
+                      key={index}
+                      className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
             </ProfileSection>
 
             {/* Projects Section */}
@@ -125,14 +161,32 @@ export default function ProfileBuilderScreen({ onComplete, onBack }: ProfileBuil
               isRegenerating={isRegenerating}
               isEditing={editingSection === "projects"}
             >
-              <ul className="space-y-3">
-                {profile.projects.map((project, index) => (
-                  <li key={index} className="flex items-start gap-3 text-muted-foreground">
-                    <Check className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                    <span>{project}</span>
-                  </li>
-                ))}
-              </ul>
+              {editingSection === "projects" ? (
+                <div className="space-y-2 w-full">
+                  <textarea
+                    value={profile.projects.join("\n")}
+                    onChange={(e) => {
+                      const newProjects = e.target.value
+                        .split("\n")
+                        .map(p => p.trim())
+                        .filter(Boolean)
+                      setProfile(prev => ({ ...prev, projects: newProjects }))
+                    }}
+                    placeholder="Mỗi dòng là một dự án..."
+                    className="w-full h-40 p-4 bg-background border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                  />
+                  <p className="text-xs text-muted-foreground">Mỗi dòng tương ứng với một dự án nổi bật</p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {profile.projects.map((project, index) => (
+                    <li key={index} className="flex items-start gap-3 text-muted-foreground">
+                      <Check className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                      <span>{project}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </ProfileSection>
 
             {/* Achievements Section */}
@@ -143,22 +197,40 @@ export default function ProfileBuilderScreen({ onComplete, onBack }: ProfileBuil
               isRegenerating={isRegenerating}
               isEditing={editingSection === "achievements"}
             >
-              <ul className="space-y-3">
-                {profile.achievements.map((achievement, index) => (
-                  <li key={index} className="flex items-start gap-3 text-muted-foreground">
-                    <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-accent">{index + 1}</span>
-                    </div>
-                    <span>{achievement}</span>
-                  </li>
-                ))}
-              </ul>
+              {editingSection === "achievements" ? (
+                <div className="space-y-2 w-full">
+                  <textarea
+                    value={profile.achievements.join("\n")}
+                    onChange={(e) => {
+                      const newAchievements = e.target.value
+                        .split("\n")
+                        .map(a => a.trim())
+                        .filter(Boolean)
+                      setProfile(prev => ({ ...prev, achievements: newAchievements }))
+                    }}
+                    placeholder="Mỗi dòng là một thành tựu..."
+                    className="w-full h-40 p-4 bg-background border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                  />
+                  <p className="text-xs text-muted-foreground">Mỗi dòng tương ứng với một thành tựu/chứng chỉ</p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {profile.achievements.map((achievement, index) => (
+                    <li key={index} className="flex items-start gap-3 text-muted-foreground">
+                      <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-accent">{index + 1}</span>
+                      </div>
+                      <span>{achievement}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </ProfileSection>
           </div>
 
           {/* Mobile CTA */}
           <div className="mt-8 sm:hidden">
-            <Button onClick={onComplete} size="lg" className="w-full h-14 text-lg font-semibold rounded-xl">
+            <Button onClick={handleComplete} size="lg" className="w-full h-14 text-lg font-semibold rounded-xl">
               Lưu và tìm việc phù hợp
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

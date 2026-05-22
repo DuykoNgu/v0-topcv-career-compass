@@ -25,6 +25,24 @@ const interestOptions = [
   "Startup", "Remote Work", "Quản lý", "Creative"
 ]
 
+const dislikeOptions = [
+  "Lương thấp, không tương xứng",
+  "Không có người hướng dẫn (Mentor)",
+  "Môi trường gò bó (Onsite 100%)",
+  "Áp lực quá tải, OT nhiều",
+  "Thiếu lộ trình thăng tiến rõ ràng",
+  "Công việc tẻ nhạt, ít học hỏi"
+]
+
+const expectationOptions = [
+  "Lương thưởng hấp dẫn hơn",
+  "Có Mentor giàu kinh nghiệm",
+  "Hình thức làm việc Hybrid/Remote",
+  "Thời gian linh hoạt, ít OT",
+  "Cơ hội học tập & thăng tiến rõ ràng",
+  "Công nghệ mới, dự án thử thách"
+]
+
 export default function OnboardingScreen({ careerStage, onComplete, onBack }: OnboardingScreenProps) {
   const [step, setStep] = useState(1)
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
@@ -32,7 +50,16 @@ export default function OnboardingScreen({ careerStage, onComplete, onBack }: On
   const [experience, setExperience] = useState("")
   const [goals, setGoals] = useState("")
 
-  const totalSteps = 4
+  // State khảo sát công việc cũ cho office worker
+  const [prevTitle, setPrevTitle] = useState("")
+  const [prevSalary, setPrevSalary] = useState<number>(15)
+  const [prevWorkMode, setPrevWorkMode] = useState("On-site")
+  const [prevHasMentor, setPrevHasMentor] = useState(false)
+  const [prevDislikes, setPrevDislikes] = useState<string[]>([])
+  const [prevExpectations, setPrevExpectations] = useState<string[]>([])
+
+  const isOffice = careerStage === "office"
+  const totalSteps = isOffice ? 5 : 4
   const progress = (step / totalSteps) * 100
 
   const toggleSkill = (skill: string) => {
@@ -60,6 +87,14 @@ export default function OnboardingScreen({ careerStage, onComplete, onBack }: On
         interests: selectedInterests,
         experience,
         goals,
+        previousJobSurvey: isOffice ? {
+          title: prevTitle,
+          salary: prevSalary,
+          workMode: prevWorkMode,
+          hasMentor: prevHasMentor,
+          dislikedFactors: prevDislikes,
+          expectedImprovements: prevExpectations
+        } : undefined
       })
     }
   }
@@ -77,7 +112,13 @@ export default function OnboardingScreen({ careerStage, onComplete, onBack }: On
       case 1: return selectedSkills.length >= 3
       case 2: return selectedInterests.length >= 2
       case 3: return experience.trim().length > 0
-      case 4: return goals.trim().length > 0
+      case 4: 
+        if (isOffice) {
+          return prevTitle.trim().length > 0 && prevDislikes.length >= 1 && prevExpectations.length >= 1
+        }
+        return goals.trim().length > 0
+      case 5:
+        return goals.trim().length > 0
       default: return false
     }
   }
@@ -187,7 +228,153 @@ export default function OnboardingScreen({ careerStage, onComplete, onBack }: On
             </StepContent>
           )}
 
-          {step === 4 && (
+          {step === 4 && isOffice && (
+            <StepContent
+              title="Khảo sát công việc cũ"
+              subtitle="Chia sẻ trải nghiệm công việc trước để AI gợi ý bến đỗ tốt hơn"
+            >
+              <div className="space-y-6 bg-card border border-border p-6 rounded-2xl shadow-sm text-left">
+                {/* Chức danh & Mức lương */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Chức danh công việc cũ *</label>
+                    <input
+                      type="text"
+                      value={prevTitle}
+                      onChange={(e) => setPrevTitle(e.target.value)}
+                      placeholder="Ví dụ: Marketing Executive"
+                      className="w-full h-11 px-4 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Mức lương cũ: {prevSalary} triệu/tháng</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        min="5"
+                        max="100"
+                        value={prevSalary}
+                        onChange={(e) => setPrevSalary(Number(e.target.value))}
+                        className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                      />
+                      <input
+                        type="number"
+                        min="5"
+                        max="100"
+                        value={prevSalary}
+                        onChange={(e) => setPrevSalary(Number(e.target.value))}
+                        className="w-20 h-11 px-2 bg-background border border-border rounded-xl text-sm text-center text-foreground font-semibold focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hình thức & Mentor */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Hình thức làm việc cũ</label>
+                    <div className="flex gap-2">
+                      {["On-site", "Hybrid", "Remote"].map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => setPrevWorkMode(mode)}
+                          className={`flex-1 h-11 rounded-xl text-sm font-semibold border transition-all ${
+                            prevWorkMode === mode
+                              ? "bg-primary/10 border-primary text-primary"
+                              : "bg-background border-border text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Có người hướng dẫn (Mentor)?</label>
+                    <div className="flex gap-2">
+                      {[
+                        { label: "Có Mentor", value: true },
+                        { label: "Không có", value: false }
+                      ].map((item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => setPrevHasMentor(item.value)}
+                          className={`flex-1 h-11 rounded-xl text-sm font-semibold border transition-all ${
+                            prevHasMentor === item.value
+                              ? "bg-primary/10 border-primary text-primary"
+                              : "bg-background border-border text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Điểm chưa hài lòng */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-foreground">Điều chưa hài lòng ở công việc cũ (Chọn ít nhất 1) *</label>
+                  <div className="flex flex-wrap gap-2">
+                    {dislikeOptions.map((item) => {
+                      const isSelected = prevDislikes.includes(item)
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => {
+                            setPrevDislikes(prev =>
+                              prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item]
+                            )
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 ${
+                            isSelected
+                              ? "bg-destructive/10 border-destructive text-destructive font-bold"
+                              : "bg-background border border-border text-muted-foreground hover:border-primary hover:bg-primary/5"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Mong muốn cải thiện */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-foreground">Mong muốn cải thiện nhất (Chọn ít nhất 1) *</label>
+                  <div className="flex flex-wrap gap-2">
+                    {expectationOptions.map((item) => {
+                      const isSelected = prevExpectations.includes(item)
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => {
+                            setPrevExpectations(prev =>
+                              prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item]
+                            )
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 ${
+                            isSelected
+                              ? "bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold"
+                              : "bg-background border border-border text-muted-foreground hover:border-primary hover:bg-primary/5"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </StepContent>
+          )}
+
+          {((!isOffice && step === 4) || (isOffice && step === 5)) && (
             <StepContent
               title="Mục tiêu nghề nghiệp"
               subtitle="Bạn mong muốn gì trong công việc tiếp theo?"

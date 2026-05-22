@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, CheckCircle2, Loader2, FileText, Upload, Sparkles } from "lucide-react"
 import type { Job } from "@/app/page"
+import { useToast } from "@/hooks/use-toast"
 
 interface ApplyScreenProps {
   job: Job
@@ -15,6 +16,7 @@ interface ApplyScreenProps {
 export default function ApplyScreen({ job, onSuccess, onBack }: ApplyScreenProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const { toast } = useToast()
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
@@ -147,7 +149,11 @@ export default function ApplyScreen({ job, onSuccess, onBack }: ApplyScreenProps
                     <p className="text-sm text-muted-foreground">Tùy chọn - tăng cơ hội được chọn</p>
                   </div>
                 </div>
-                <Button variant="outline" className="rounded-xl">
+                <Button 
+                  variant="outline" 
+                  className="rounded-xl"
+                  onClick={() => toast({ title: "Đính kèm Cover Letter", description: "Tính năng này sẽ được hỗ trợ trong phiên bản tiếp theo." })}
+                >
                   Thêm file
                 </Button>
               </div>

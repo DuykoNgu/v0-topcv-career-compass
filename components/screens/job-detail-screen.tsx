@@ -13,7 +13,10 @@ import {
   Check,
   Lightbulb,
   Building2,
-  ExternalLink
+  ExternalLink,
+  Sparkles,
+  TrendingUp,
+  CheckCircle2
 } from "lucide-react"
 import type { UserProfile, Job } from "@/app/page"
 
@@ -25,7 +28,127 @@ interface JobDetailScreenProps {
   onBack: () => void
 }
 
-export default function JobDetailScreen({ job, onApply, onViewFit, onBack }: JobDetailScreenProps) {
+function getComparison(job: Job, survey: any) {
+  if (!survey) return null
+
+  const prevSalary = Number(survey.salary) || 0
+  const jobMin = job.salaryMin || 0
+  
+  // Salary assessment
+  let salaryText = ""
+  let salaryStatus: "better" | "equal" | "worse" = "equal"
+  if (jobMin > prevSalary) {
+    const diff = jobMin - prevSalary
+    salaryText = `+${diff}M (+${Math.round((diff / prevSalary) * 100)}%)`
+    salaryStatus = "better"
+  } else if (jobMin === prevSalary) {
+    salaryText = "Bằng nhau"
+    salaryStatus = "equal"
+  } else {
+    salaryText = `-${prevSalary - jobMin}M`
+    salaryStatus = "worse"
+  }
+
+  // Work Mode assessment
+  let workModeText = ""
+  let workModeStatus: "better" | "equal" | "worse" = "equal"
+  const isOldFlexible = survey.workMode === "Hybrid" || survey.workMode === "Remote"
+  const isNewFlexible = job.workMode === "Hybrid" || job.workMode === "Remote"
+  
+  if (!isOldFlexible && isNewFlexible) {
+    workModeText = `Linh hoạt hơn`
+    workModeStatus = "better"
+  } else if (isOldFlexible && !isNewFlexible) {
+    workModeText = `Ít linh hoạt hơn`
+    workModeStatus = "worse"
+  } else {
+    workModeText = "Tương đương"
+    workModeStatus = "equal"
+  }
+
+  // Mentor assessment
+  let mentorText = ""
+  let mentorStatus: "better" | "equal" | "worse" = "equal"
+  if (!survey.hasMentor && job.hasMentor) {
+    mentorText = "Cải thiện (Có)"
+    mentorStatus = "better"
+  } else if (survey.hasMentor && !job.hasMentor) {
+    mentorText = "Kém hơn (Không)"
+    mentorStatus = "worse"
+  } else {
+    mentorText = "Tương đương"
+    mentorStatus = "equal"
+  }
+
+  // Check resolved pain points
+  const resolvedIssues: string[] = []
+  survey.dislikedFactors?.forEach((factor: string) => {
+    if (factor.includes("Lương") && jobMin > prevSalary) {
+      resolvedIssues.push("Khắc phục LƯƠNG THẤP: Mức lương khởi điểm mới cao hơn.")
+    }
+    if (factor.includes("Mentor") && job.hasMentor) {
+      resolvedIssues.push("Giải quyết THIẾU MENTOR: Có mentor hướng dẫn bài bản.")
+    }
+    if ((factor.includes("gò bó") || factor.includes("Onsite 100%")) && isNewFlexible) {
+      resolvedIssues.push("Giải tỏa MÔI TRƯỜNG GÒ BÓ: Chế độ làm việc linh hoạt.")
+    }
+    if (factor.includes("thăng tiến") && job.hasMentor) {
+      resolvedIssues.push("Cải thiện LỘ TRÌNH THĂNG TIẾN: Được mentor dẫn dắt định hướng.")
+    }
+  })
+
+  // Expectations met
+  const metExpectations: string[] = []
+  survey.expectedImprovements?.forEach((exp: string) => {
+    if (exp.includes("Lương") && jobMin > prevSalary) {
+      metExpectations.push("Thu nhập hấp dẫn & cạnh tranh hơn.")
+    }
+    if (exp.includes("Mentor") && job.hasMentor) {
+      metExpectations.push("Có mentor hỗ trợ tận tình.")
+    }
+    if (exp.includes("Hybrid/Remote") && isNewFlexible) {
+      metExpectations.push(`Chế độ làm việc ${job.workMode} linh hoạt.`)
+    }
+  })
+
+  // Overall improvement score calculation matching match-screen
+  let scorePoints = 50
+  if (jobMin > prevSalary) {
+    scorePoints += Math.min(25, ((jobMin - prevSalary) / prevSalary) * 50)
+  } else if (jobMin === prevSalary) {
+    scorePoints += 5
+  } else {
+    scorePoints -= 15
+  }
+  if (!isOldFlexible && isNewFlexible) scorePoints += 15
+  if (!survey.hasMentor && job.hasMentor) scorePoints += 15
+  
+  survey.dislikedFactors?.forEach((factor: string) => {
+    if (factor.includes("Lương") && jobMin > prevSalary) scorePoints += 10
+    if (factor.includes("Mentor") && job.hasMentor) scorePoints += 10
+    if ((factor.includes("gò bó") || factor.includes("Onsite 100%")) && isNewFlexible) scorePoints += 10
+  })
+  
+  const finalScore = Math.min(100, Math.max(0, Math.round(scorePoints)))
+
+  return {
+    score: finalScore,
+    prevSalary,
+    prevWorkMode: survey.workMode,
+    prevHasMentor: survey.hasMentor,
+    prevTitle: survey.title,
+    salaryText,
+    salaryStatus,
+    workModeText,
+    workModeStatus,
+    mentorText,
+    mentorStatus,
+    resolvedIssues,
+    metExpectations
+  }
+}
+
+export default function JobDetailScreen({ job, userProfile, onApply, onViewFit, onBack }: JobDetailScreenProps) {
   const getScoreColor = (score: number) => {
     if (score >= 90) return "bg-accent text-accent-foreground"
     if (score >= 80) return "bg-primary text-primary-foreground"
@@ -98,6 +221,119 @@ export default function JobDetailScreen({ job, onApply, onViewFit, onBack }: Job
                   </div>
                 )}
               </div>
+
+              {/* So sánh công việc cũ */}
+              {(() => {
+                const survey = userProfile?.previousJobSurvey
+                const comparison = getComparison(job, survey)
+                if (!comparison) return null
+
+                return (
+                  <div className="bg-card rounded-2xl border border-border p-6 space-y-6 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-border pb-4">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                        <h3 className="text-lg font-bold text-foreground">Đối chiếu với Công việc cũ</h3>
+                      </div>
+                      <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                        <span className="text-xs text-muted-foreground font-medium">Chỉ số cải thiện:</span>
+                        <span className="text-sm font-extrabold text-emerald-500">{comparison.score}%</span>
+                      </div>
+                    </div>
+
+                    {/* Table-like Grid */}
+                    <div className="grid grid-cols-3 gap-4 text-sm pb-4 border-b border-border">
+                      <div className="font-semibold text-muted-foreground">Tiêu chí</div>
+                      <div className="font-semibold text-muted-foreground truncate">Cũ ({comparison.prevTitle || "Công việc cũ"})</div>
+                      <div className="font-semibold text-foreground truncate">Mới ({job.title})</div>
+
+                      {/* Row 1: Lương */}
+                      <div className="py-1 flex items-center gap-1.5 font-medium text-foreground">
+                        <DollarSign className="w-4 h-4 text-muted-foreground" />
+                        Mức lương
+                      </div>
+                      <div className="py-1 text-muted-foreground">{comparison.prevSalary}M /tháng</div>
+                      <div className="py-1 font-semibold flex flex-wrap items-center gap-2">
+                        <span>{job.salary}</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                          comparison.salaryStatus === "better" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
+                          comparison.salaryStatus === "worse" ? "bg-destructive/10 text-destructive" :
+                          "bg-muted text-muted-foreground"
+                        }`}>
+                          {comparison.salaryText}
+                        </span>
+                      </div>
+
+                      {/* Row 2: Hình thức */}
+                      <div className="py-1 flex items-center gap-1.5 font-medium text-foreground">
+                        <Briefcase className="w-4 h-4 text-muted-foreground" />
+                        Hình thức
+                      </div>
+                      <div className="py-1 text-muted-foreground">{comparison.prevWorkMode}</div>
+                      <div className="py-1 font-semibold flex flex-wrap items-center gap-2">
+                        <span>{job.workMode}</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                          comparison.workModeStatus === "better" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
+                          comparison.workModeStatus === "worse" ? "bg-destructive/10 text-destructive" :
+                          "bg-muted text-muted-foreground"
+                        }`}>
+                          {comparison.workModeText}
+                        </span>
+                      </div>
+
+                      {/* Row 3: Hướng dẫn */}
+                      <div className="py-1 flex items-center gap-1.5 font-medium text-foreground">
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                        Mentor
+                      </div>
+                      <div className="py-1 text-muted-foreground">{comparison.prevHasMentor ? "Có Mentor" : "Không có"}</div>
+                      <div className="py-1 font-semibold flex flex-wrap items-center gap-2">
+                        <span>{job.hasMentor ? "Có Mentor" : "Không có"}</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                          comparison.mentorStatus === "better" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
+                          comparison.mentorStatus === "worse" ? "bg-destructive/10 text-destructive" :
+                          "bg-muted text-muted-foreground"
+                        }`}>
+                          {comparison.mentorText}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Resolved Pain Points & Expected Improvements */}
+                    {(comparison.resolvedIssues.length > 0 || comparison.metExpectations.length > 0) && (
+                      <div className="space-y-4 pt-2">
+                        {comparison.resolvedIssues.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4" />
+                              Vấn đề cũ được giải quyết:
+                            </h4>
+                            <ul className="space-y-1.5 pl-6 list-disc text-xs text-muted-foreground leading-relaxed">
+                              {comparison.resolvedIssues.map((issue, idx) => (
+                                <li key={idx}>{issue}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {comparison.metExpectations.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-bold text-primary flex items-center gap-1.5">
+                              <Sparkles className="w-4 h-4 text-primary" />
+                              Kỳ vọng được đáp ứng:
+                            </h4>
+                            <ul className="space-y-1.5 pl-6 list-disc text-xs text-muted-foreground leading-relaxed">
+                              {comparison.metExpectations.map((exp, idx) => (
+                                <li key={idx}>{exp}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Description */}
               <div className="bg-card rounded-2xl border border-border p-6">

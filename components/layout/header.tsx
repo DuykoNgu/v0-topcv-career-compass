@@ -2,13 +2,26 @@
 
 import { Compass, User, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
 
 interface HeaderProps {
   showNav?: boolean
+  isLoggedIn?: boolean
   onLogoClick?: () => void
+  onProfileClick?: () => void
+  onJobsClick?: () => void
 }
 
-export default function Header({ showNav = true, onLogoClick }: HeaderProps) {
+export default function Header({ showNav = true, isLoggedIn = false, onLogoClick, onProfileClick, onJobsClick }: HeaderProps) {
+  const { toast } = useToast()
+
+  const handleFeatureNotAvailable = (featureName: string) => {
+    toast({
+      title: "Tính năng đang phát triển",
+      description: `Tính năng ${featureName} đang được xây dựng và sẽ sớm ra mắt!`,
+    })
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
@@ -29,32 +42,54 @@ export default function Header({ showNav = true, onLogoClick }: HeaderProps) {
         {/* Navigation */}
         {showNav && (
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <button 
+              onClick={onJobsClick} 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
               Tìm việc
-            </a>
-            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            </button>
+            <button 
+              onClick={onProfileClick} 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
               Hồ sơ
-            </a>
-            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            </button>
+            <button 
+              onClick={() => handleFeatureNotAvailable("Công cụ AI")} 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
               Công cụ AI
-            </a>
-            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            </button>
+            <button 
+              onClick={() => handleFeatureNotAvailable("Blog")} 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
               Blog
-            </a>
+            </button>
           </nav>
         )}
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="hidden sm:flex">
-            <Bell className="w-5 h-5" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <User className="w-5 h-5" />
-          </Button>
-          <Button className="hidden sm:flex">
-            Đăng nhập
-          </Button>
+          {isLoggedIn ? (
+            <>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hidden sm:flex"
+                onClick={() => toast({ title: "Thông báo", description: "Bạn chưa có thông báo mới nào." })}
+              >
+                <Bell className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full bg-muted" onClick={onProfileClick}>
+                <User className="w-5 h-5" />
+              </Button>
+            </>
+          ) : (
+            <Button className="hidden sm:flex" onClick={onLogoClick}>
+              Đăng nhập
+            </Button>
+          )}
         </div>
       </div>
     </header>

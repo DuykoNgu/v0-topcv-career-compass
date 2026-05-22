@@ -8,6 +8,7 @@ import type { UserProfile } from "@/app/page"
 interface CareerCompassResultProps {
   userProfile: UserProfile
   onCreateProfile: () => void
+  onViewJobs: () => void
   onBack: () => void
 }
 
@@ -35,7 +36,7 @@ const matchedRoles = [
   },
 ]
 
-export default function CareerCompassResult({ onCreateProfile, onBack }: CareerCompassResultProps) {
+export default function CareerCompassResult({ onCreateProfile, onViewJobs, onBack }: CareerCompassResultProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -142,6 +143,7 @@ export default function CareerCompassResult({ onCreateProfile, onBack }: CareerC
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <Button
+              onClick={onViewJobs}
               variant="outline"
               size="lg"
               className="h-14 px-10 text-lg font-semibold rounded-xl"

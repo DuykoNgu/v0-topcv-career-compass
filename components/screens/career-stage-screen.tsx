@@ -3,6 +3,17 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { GraduationCap, Briefcase, ChevronLeft, ArrowRight } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useState } from "react"
 import type { CareerStage } from "@/app/page"
 
 interface CareerStageScreenProps {
@@ -11,7 +22,16 @@ interface CareerStageScreenProps {
 }
 
 export default function CareerStageScreen({ onSelect, onBack }: CareerStageScreenProps) {
+  const [selectedRole, setSelectedRole] = useState<CareerStage>(null)
+
+  const handleConfirm = () => {
+    if (selectedRole) {
+      onSelect(selectedRole)
+    }
+  }
+
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
@@ -52,9 +72,12 @@ export default function CareerStageScreen({ onSelect, onBack }: CareerStageScree
             <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">
               Bạn đang ở giai đoạn nào?
             </h1>
-            <p className="text-lg text-muted-foreground max-w-lg mx-auto">
+            <p className="text-lg text-muted-foreground max-w-lg mx-auto mb-4">
               Chọn để chúng tôi cá nhân hóa trải nghiệm và gợi ý phù hợp nhất cho bạn
             </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium">
+              Lưu ý: Mỗi tài khoản chỉ được chọn vai trò một lần.
+            </div>
           </motion.div>
 
           {/* Selection Cards */}
@@ -69,7 +92,7 @@ export default function CareerStageScreen({ onSelect, onBack }: CareerStageScree
                 title="Sinh viên / Mới tốt nghiệp"
                 description="Đang tìm thực tập hoặc công việc đầu tiên. Muốn khám phá career path phù hợp."
                 features={["Gợi ý ngành nghề", "Hướng dẫn tạo CV đầu tiên", "Việc làm part-time/intern"]}
-                onClick={() => onSelect("student")}
+                onClick={() => setSelectedRole("student")}
               />
             </motion.div>
 
@@ -83,13 +106,29 @@ export default function CareerStageScreen({ onSelect, onBack }: CareerStageScree
                 title="Nhân sự văn phòng"
                 description="Đã đi làm và đang tìm cơ hội nghề nghiệp tốt hơn hoặc chuyển ngành."
                 features={["Match với vị trí senior", "Phân tích kỹ năng chuyên sâu", "Đề xuất lộ trình thăng tiến"]}
-                onClick={() => onSelect("office")}
+                onClick={() => setSelectedRole("office")}
               />
             </motion.div>
           </div>
         </div>
       </div>
     </motion.div>
+
+    <AlertDialog open={selectedRole !== null} onOpenChange={(open) => !open && setSelectedRole(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Xác nhận vai trò của bạn?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Bạn đang chọn vai trò <strong>{selectedRole === 'student' ? 'Sinh viên / Mới tốt nghiệp' : 'Nhân sự văn phòng'}</strong>. Lựa chọn này sẽ đi liền với tài khoản của bạn và quyết định các tính năng, gợi ý việc làm sau này. Bạn không thể thay đổi vai trò sau khi đã xác nhận.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setSelectedRole(null)}>Hủy, chọn lại</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm}>Xác nhận</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }
 
