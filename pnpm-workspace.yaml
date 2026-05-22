@@ -1,0 +1,6 @@
+allowBuilds:
+  core-js: set this to true or false
+  sharp: set this to true or false
+minimumReleaseAgeExclude:
+  - framer-motion@12.40.0
+  - motion-dom@12.40.0
